@@ -15,13 +15,15 @@ namespace ImageProcessingApi.Services
         private readonly ConcurrentDictionary<string, byte[]> _cache = new();
 
 
-        // Attempts to retrieve a cached item by key.
-        // If the key exists, returns the byte array; otherwise, returns null.
+        public byte[] Get(string key)
+        {
+            return _cache.TryGetValue(key, out var cachedData) ? cachedData : null;
+        }
 
-
-
-        // Stores or updates a cached item in the dictionary with the given key and byte array value.
-       
+        public void Set(string key, byte[] data)
+        {
+            _cache[key] = data;
+        }
 
     }
 }

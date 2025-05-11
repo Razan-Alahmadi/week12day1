@@ -26,36 +26,35 @@ namespace ImageProcessingApi.Middleware
 
         public async Task InvokeAsync(HttpContext context)
         {
-            // Extract the API key from the request headers
             var key = context.Request.Headers["X-Api-Key"].ToString();
-
-            // Capture the current UTC timestamp
             var now = DateTime.UtcNow;
 
-            // Get the list of timestamps for this key, or create a new one if it doesn’t exist
+            var requests = _requests.GetOrAdd(key, new List<DateTime>());
 
-            // Lock the list to make it thread-safe
+            bool rateLimitExceeded;
             lock (requests)
             {
-                // Remove timestamps older than the allowed interval
-               
+                requests.RemoveAll(t => (now - t).TotalSeconds > _intervalSeconds);
 
-                // Check if the number of recent requests exceeds the limit
                 if (requests.Count >= _limit)
                 {
-                    // Respond with HTTP 429 Too Many Requests
-
-
-                    // Tell the client how long to wait before retrying
-                   // context.Response.WriteAsync("Rate limit exceeded.");
-
-
-                    return; // End the request here
+                    rateLimitExceeded = true;
                 }
-
-                // Add the current request time to the list
-                requests.Add(now);
+                else
+                {
+                    requests.Add(now);
+                    rateLimitExceeded = false;
+                }
             }
+
+            if (rateLimitExceeded)
+            {
+                context.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+                context.Response.Headers["Retry-After"] = _intervalSeconds.ToString();
+                await context.Response.WriteAsync("Rate limit exceeded.");
+                return;
+            }
+
             await _next(context);
         }
     }

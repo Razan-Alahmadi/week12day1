@@ -15,10 +15,8 @@ namespace ImageProcessingApi.Middleware
 
         public async Task InvokeAsync(HttpContext context)
         {
-            // Get the requested path from the incoming HTTP request
             var path = context.Request.Path.Value;
 
-            // Bypass static files like index.html, CSS, JS, etc.
             if (path != null && (path.StartsWith("/index.html") ||
                                  path.StartsWith("/css") ||
                                  path.StartsWith("/js") ||
@@ -30,19 +28,17 @@ namespace ImageProcessingApi.Middleware
                 return;
             }
 
-            // For other requests, check if the X-Api-Key header exists and is valid
-            // Unauthorized
-            //"Invalid or missing API Key."
-            // Stop further processing
+            if (!context.Request.Headers.TryGetValue("X-Api-Key", out var apiKey) ||
+                !ApiKeysController.IsValidApiKey(apiKey))
+            {
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                await context.Response.WriteAsync("Invalid or missing API Key.");
+                return;
+            }
 
-
-
-
-            // If the API key is valid, allow the request to continue through the middleware pipeline
             await _next(context);
         }
 
     }
 }
 
-}

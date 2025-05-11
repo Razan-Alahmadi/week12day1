@@ -15,7 +15,7 @@ namespace ImageProcessingApi.Controllers
         {
             var apiKey = Guid.NewGuid().ToString();
             ApiKeys[apiKey] = true;
-            return Ok(new { apiKey });
+            return Content(apiKey);
         }
 
         public static bool IsValidApiKey(string apiKey) => ApiKeys.ContainsKey(apiKey);
